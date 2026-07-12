@@ -1,0 +1,55 @@
+import math
+from collections import defaultdict
+from einops import rearrange
+from torch import Tensor
+
+
+class TopKAccumulator:
+    """
+    Accumulates Recall@K and NDCG@K, matching the evaluation protocol used in
+    the TIGER paper (Rajput et al., "Recommender Systems with Generative
+    Retrieval", NeurIPS 2023). Since each user has exactly one held-out
+    ground-truth next item (leave-one-out evaluation), Recall@K reduces to the
+    hit rate at K, and NDCG@K reduces to 1 / log2(rank + 2) when the item is
+    found within the top-K, and 0 otherwise.
+    """
+
+    def __init__(self, ks=[5, 10]):
+        self.ks = ks
+        self.reset()
+
+    def reset(self):
+        self.total = 0
+        self.metrics = defaultdict(float)
+
+    def accumulate(self, actual: Tensor, top_k: Tensor) -> None:
+        """
+        actual: (B, D) tensor -- the ground-truth Semantic ID for each of the
+                B examples in the batch.
+        top_k:  (B, K, D) tensor -- the K generated/candidate Semantic IDs for
+                each example, ordered by rank (best first).
+        """
+        B, D = actual.shape
+
+        # For every candidate in top_k, check whether it exactly matches the
+        # ground-truth Semantic ID tuple.
+        pos_match = rearrange(actual, "b d -> b 1 d") == top_k
+        is_match = pos_match.all(axis=-1)          # (B, K)
+        match_found, rank = is_match.max(axis=-1)  # rank = index of first match
+        matched_rank = rank[match_found]
+
+        for k in self.ks:
+            hits_at_k = matched_rank[matched_rank < k]
+
+            # Recall@K (== Hit Rate@K under single-relevant-item evaluation)
+            self.metrics[f"recall@{k}"] += len(hits_at_k)
+
+            # NDCG@K: since there is only one relevant item, DCG@K is either
+            # 0 (not found in top-K) or 1 / log2(rank + 2), and IDCG@K = 1.
+            dcg = sum(1.0 / math.log2(r.item() + 2) for r in hits_at_k)
+            self.metrics[f"ndcg@{k}"] += dcg
+
+        self.total += B
+
+    def reduce(self) -> dict:
+        return {k: v / self.total for k, v in self.metrics.items()}
