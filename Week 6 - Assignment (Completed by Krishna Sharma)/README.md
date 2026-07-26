@@ -53,6 +53,21 @@ Or run `tiger_kaggle_workflow.ipynb` on Kaggle (GPU + Internet enabled) for the 
 
 **Note on the embedding model:** the config uses `sentence-t5-base` rather than `sentence-t5-xxl`; the XXL variant (~5B params) does not fit in a 16GB GPU at encoding time. Both produce 768-dim embeddings, so this only affects embedding quality, not the pipeline architecture.
 
+## Code structure (previous → current)
+
+An earlier version of this project used a flat-file layout. The mapping below helps locate any file from that version in the current, package-based structure — no pipeline stage was removed, only reorganized:
+
+| Previous (file / folder) | Current equivalent |
+|---|---|
+| `train_rqvae.py` | `tiger/rqvae/train.py` |
+| `train_decoder.py`, `train_decoder_1.py` | `tiger/retrieval/train.py` |
+| `evaluate/` folder, `test_metrics.py`, `Evaluation Metric Testing.ipynb` | `tiger/retrieval/evaluate.py`, `tiger/retrieval/eval.py` |
+| `model.py` | `tiger/rqvae/model.py` + `tiger/retrieval/model.py` (two separate models — RQ-VAE and Transformer) |
+| `modules/` folder (encoder, quantize, kmeans, loss, etc.) | `tiger/rqvae/encoder.py`, `tiger/rqvae/quantizer.py`, `tiger/rqvae/metrics.py` |
+| `data/` folder (`amazon.py`, `preprocessing.py`) | `tiger/scripts/preprocess_beauty.py`, `tiger/rqvae/dataloader_beauty.py` |
+| `requirements.txt` | `requirements.txt` (same) |
+| (Semantic ID generation, done separately) | `tiger/scripts/build_sid_tables.py`, `tiger/rqvae/generate_sids.py` |
+
 ## Acknowledgements
 
 This implementation is built on top of an existing open-source reproduction of the TIGER paper, used and extended as a base for this project (hyperparameter correction, full Kaggle training pipeline, debugging, and evaluation against the paper's reported numbers).
