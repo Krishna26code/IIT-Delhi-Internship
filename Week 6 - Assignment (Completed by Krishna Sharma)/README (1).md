@@ -56,16 +56,6 @@ Training used the paper's reported hyperparameters (Adagrad lr=0.4 style config 
 
 > **Note:** the paper itself specifies 200,000 steps for Sports (same as Beauty) and only reserves the 100,000-step budget for Toys, due to its smaller size. Sports was run with a 100,000-step budget in this reproduction — that is a deviation from the paper on our part, not one the paper calls for. It's flagged here rather than silently matching the "Yes" hyperparameter checklist.
 
-Early stopping (patience = 5 evaluations / 25,000 steps without validation NDCG@10 improvement) triggered before the configured limit on every dataset, indicating convergence rather than a run cut short:
-
-| Dataset | Steps configured | Best val. NDCG@10 (step) | Stopped at | % of budget used |
-|---|---|---|---|---|
-| Beauty | 200,000 | 0.0341 (step 20,000) | step 55,000 | 27.5% |
-| Sports and Outdoors | 100,000 | 0.0159 (step 70,000) | step 95,000 | 95% (near-full budget) |
-| Toys and Games | 100,000 | 0.0181 (step 45,000) | step 70,000 | 70% |
-
-Sports came within 5,000 steps of its (non-paper-matching) budget cap before early-stopping triggered — see `val_curve.png` per dataset for the full training curves. The best checkpoint by validation NDCG@10, not the last one, was used for final evaluation in every case.
-
 ### Why results don't fully match the paper
 
 Multiple independent reproductions of this paper (including other open-source attempts) consistently land below the paper's reported metrics, even when matching all stated hyperparameters. The paper was trained with Google's internal T5X framework, which has tokenization/training details (exact vocabulary construction, hashing scheme for user tokens, etc.) that are not fully specified in the paper text. This is a known, documented gap in the community — not evidence of a broken pipeline. (Sanity check: `invalid_rate` on generated Semantic IDs stays well under 1% at K=10 on every dataset — Beauty ≈0.02%, Sports ≈0.0006%, Toys ≈0.16% — confirming beam search almost always lands on a valid item, i.e. the model learned the task correctly on all three.)
