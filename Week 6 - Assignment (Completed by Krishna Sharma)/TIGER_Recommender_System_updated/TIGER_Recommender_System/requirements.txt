@@ -1,8 +1,0 @@
-torch
-transformers
-sentence-transformers
-numpy
-pandas
-pyyaml
-scikit-learn
-matplotlib
