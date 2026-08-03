@@ -1,0 +1,34 @@
+name: amazon_sports
+
+data:
+  meta_path: data/amazon/meta_Sports_and_Outdoors.json.gz
+  embedding_model: sentence-transformers/sentence-t5-base
+  input_dim: 768
+  standardize: true
+  # Filter to the 5-core items the recommender uses (~18k) instead of the full
+  # catalog. Points at the train/val/test.jsonl from preprocess_category.py
+  # (relative to the project root, the cwd for all `python -m` commands).
+  sequences_dir: data_sports/processed
+
+model:
+  encoder_hidden: [512, 256, 128]
+  latent_dim: 32
+  num_levels: 3
+  codebook_size: 256
+  commitment_beta: 0.25
+  codebook_update: ema
+  ema_decay: 0.99
+  ema_eps: 1.0e-5
+  normalize_latent: false
+
+train:
+  optimizer: adagrad
+  lr: 0.1
+  batch_size: 1024
+  epochs: 20000
+  kmeans_init: true
+  eval_every: 50
+  reinit_enabled: true
+  reinit_every: 250
+  reinit_usage_threshold: 0.5
+  seed: 0
